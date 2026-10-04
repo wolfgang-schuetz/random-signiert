@@ -1,0 +1,5 @@
+config_man6_signiert.txt
+random_man6_signiert_protokoll.csv
+*.log
+__pycache__/
+*prompt*.txt
