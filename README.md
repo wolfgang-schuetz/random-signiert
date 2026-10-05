@@ -1,8 +1,8 @@
 # random-signiert
 
-Signierte Zufallszahlen von [RANDOM.ORG](https://www.random.org), alle 8 Minuten abgerufen und täglich hier veröffentlicht – Datengrundlage für ein privates Bewusstseinsexperiment.
+Signierte Zufallszahlen von [RANDOM.ORG](https://www.random.org), alle 5 Minuten abgerufen und täglich hier veröffentlicht – Datengrundlage für ein privates Bewusstseinsexperiment.
 
-*English summary: Cryptographically signed random integers from RANDOM.ORG, retrieved every 8 minutes and published daily on GitHub as the data basis for a private consciousness-and-matter experiment. The unmodified signed responses are stored so that anyone can verify their authenticity. This is a private project, not a peer-reviewed study.*
+*English summary: Cryptographically signed random integers from RANDOM.ORG, retrieved every 5 minutes and published daily on GitHub as the data basis for a private consciousness-and-matter experiment. The unmodified signed responses are stored so that anyone can verify their authenticity. This is a private project, not a peer-reviewed study.*
 
 > **Hinweis zu RANDOM.ORG:** Die Zufallszahlen stammen von RANDOM.ORG und wurden mit deren Erlaubnis veröffentlicht. RANDOM.ORG steht nicht hinter diesem Experiment, seiner Methodik oder seinen Schlussfolgerungen und unterstützt sie nicht. Die Nutzung des Dienstes ist keine Stellungnahme dieser Institution.
 
@@ -35,19 +35,19 @@ Damit nachträglich niemand behaupten kann, die Zahlen seien verändert oder sp�
 | Eigenschaft | Wert |
 |---|---|
 | Quelle | RANDOM.ORG, Methode `generateSignedIntegers` (JSON-RPC API v4) |
-| Zahlen pro Abruf | 100 |
+| Zahlen pro Abruf | 1000 (bis 2026-10-05: 100) |
 | Wertebereich | 1 bis 100 (ganze Zahlen, mit Zurücklegen) |
-| Abstand | seit 2026-10-04 alle 8 Minuten, ab 00:00 Uhr gezählt (00:00, 00:08 … 00:56, 01:04 …), also 180 Abrufe pro Tag; zuvor alle 5 Minuten (siehe [Chronik](#chronik)) |
+| Abstand | alle 5 Minuten, ab 00:00 Uhr gezählt (00:00, 00:05, 00:10 …), also 288 Abrufe pro Tag; vom 2026-10-04 bis 2026-10-05 alle 8 Minuten (siehe [Chronik](#chronik)) |
 | Veröffentlichung | täglich um 23:58 Uhr (Ortszeit MESZ/MEZ) per systemd-Timer |
 | Programmiersprache | Python 3 (nur Standardbibliothek) |
 
 Ablauf:
 
-1. Ein Dienst (`random-signiert.service`) ruft zu jedem Zeitpunkt 100 Zahlen samt Signatur bei RANDOM.ORG ab.
+1. Ein Dienst (`random-signiert.service`) ruft zu jedem Zeitpunkt 1000 Zahlen samt Signatur bei RANDOM.ORG ab.
 2. Jede Antwort wird unverändert als Rohdatensatz gespeichert und zusätzlich in ein CSV-Protokoll geschrieben.
 3. Um 23:58 Uhr erstellt `upload_github.sh` die Tabelle des Tages und lädt den Ordner `daten/` nach GitHub hoch.
 
-**Warum 8 Minuten?** Der API-Key hat ein Tageskontingent von 250.000 Bit. Ein Abruf kostet etwa 1.328 Bit. Bei 5 Minuten Abstand (288 Abrufe, ca. 382.000 Bit) war das Kontingent vor Tagesende aufgebraucht. Bei 8 Minuten (180 Abrufe, ca. 239.000 Bit) reicht es für den ganzen Tag. RANDOM.ORG setzt das Tageskontingent um 00:00 Uhr UTC zurück (02:00 Uhr MESZ bzw. 01:00 Uhr MEZ), nicht um Mitternacht Ortszeit.
+**Warum 5 Minuten und 1000 Zahlen?** RANDOM.ORG hat die Lizenz des API-Keys geändert (Non-Profit-Lizenz statt Developer-Lizenz). Es steht nun ein tägliches Kontingent von 2,5 Mio. Bit und 2000 Abrufen zur Verfügung (vorher 250.000 Bit und 1000 Abrufe). Deswegen werden nun alle 5 Minuten 1000 signierte Zufallszahlen abgerufen. Ein Abruf mit 1000 Zahlen kostet etwa 6.650 Bit; bei 288 Abrufen sind das etwa 1,9 Mio. Bit pro Tag. RANDOM.ORG setzt das Tageskontingent um 00:00 Uhr UTC zurück (02:00 Uhr MESZ bzw. 01:00 Uhr MEZ), nicht um Mitternacht Ortszeit.
 
 ## Inhalt des Repositorys
 
@@ -72,13 +72,13 @@ Nicht veröffentlicht werden die Konfigurationsdatei mit dem API-Key und das lok
 | `Datum`, `Zeit`  | lokaler Zeitpunkt des Abrufs (Ortszeit, Systemuhr des Rechners)       |
 | `SerialNumber`   | fortlaufende Nummer, die RANDOM.ORG jeder Antwort gibt                |
 | `CompletionTime` | Zeitpunkt, den RANDOM.ORG als Fertigstellung der Antwort meldet (UTC) |
-| `Zufallszahlen`  | die 100 Zahlen, durch Leerzeichen getrennt                            |
+| `Zufallszahlen`  | die Zahlen des Abrufs (1000, bis 2026-10-05: 100), durch Leerzeichen getrennt                            |
 | `Signatur`       | Signatur von RANDOM.ORG (Base64)                                      |
 | `HashedApiKey`   | Hash des verwendeten API-Keys (der Key selbst bleibt geheim)          |
 
 **JSONL** (`daten/JJJJ-MM-TT.jsonl`): pro Zeile ein Objekt `{"random": {...}, "signature": "..."}`. Das ist genau das, was RANDOM.ORG geliefert hat, und die Grundlage für die Signaturprüfung.
 
-**Für Auswertungen** bitte `CompletionTime` (UTC) verwenden. `Datum` und `Zeit` sind Ortszeit; bei der Umstellung von Sommer- auf Winterzeit (2026-10-25) wird die Stunde 02:00–03:00 doppelt durchlaufen. Die Zählung der 8 Minuten beginnt um 00:00 Uhr Ortszeit immer neu; an den Tagen der Zeitumstellung hat der Tag 23 bzw. 25 Stunden und damit 172 bzw. 188 Abrufe.
+**Für Auswertungen** bitte `CompletionTime` (UTC) verwenden. `Datum` und `Zeit` sind Ortszeit; bei der Umstellung von Sommer- auf Winterzeit (2026-10-25) wird die Stunde 02:00–03:00 doppelt durchlaufen. Die Zählung der 5 Minuten beginnt um 00:00 Uhr Ortszeit immer neu; an den Tagen der Zeitumstellung hat der Tag 23 bzw. 25 Stunden und damit 276 bzw. 300 Abrufe.
 
 ## Signatur prüfen
 
@@ -129,6 +129,7 @@ Hinweis: Das Beispiel wurde nicht mit dem Original-Key des Projekts getestet; be
 | 2026-10-03                                      | Start der signierten Abrufe, Abstand 5 Minuten                                                                                                                                                                                                                                |
 | 2026-10-03, 18:45 Uhr bis 2026-10-04, 02:05 Uhr | Keine Abrufe: Tageskontingent bei RANDOM.ORG erschöpft (Rücksetzung um 02:00 Uhr MESZ)                                                                                                                                                                                                                        |
 | 2026-10-04                                      | Umstellung von 5 auf 8 Minuten Abstand, damit das Tageskontingent reicht (Bruch im Zeitraster): letzter 5-Minuten-Abruf 10:00 Uhr, erster 8-Minuten-Abruf 10:08 Uhr                                                                                                                                                                                |
+| 2026-10-05 | RANDOM.ORG hat die Lizenz des API-Keys geändert (Non-Profit statt Developer) und ein tägliches Kontingent von 2,5 Mio. Bit eingeräumt. Seitdem werden alle 5 Minuten 1000 (statt 100) signierte Zufallszahlen abgerufen (Bruch im Zeitraster und in der Zahlenmenge pro Abruf). Letzter Abruf mit 100 Zahlen: 16:16 Uhr, erster Abruf mit 1000 Zahlen: 16:25 Uhr (Ortszeit); dazwischen keine Daten (Programm-Neustart mit neuem Key). Mit dem neuen Key beginnt die SerialNumber wieder bei 1. |
 
 ## Selbst einrichten
 
@@ -139,11 +140,11 @@ Voraussetzungen: Linux mit systemd, Python 3, git, ein eigener RANDOM.ORG-API-Ke
 
    ```
    # Obergrenze in Zufallszahlen pro Tag als Schutz im Skript, nicht das Bit-Kontingent von RANDOM.ORG
-   kontingent_zufallszahlen_taeglich=35000
+   kontingent_zufallszahlen_taeglich=300000
    intervall_beginn=1
    intervall_ende=100
-   minutenabstand=8
-   anzahl_zahlen=100
+   minutenabstand=5
+   anzahl_zahlen=1000
    name_datei_protokoll=random_man6_signiert_protokoll.csv
    name_pfad_Ordner=/Pfad/zum/Repository
    api=IHR-API-KEY
@@ -154,7 +155,7 @@ Voraussetzungen: Linux mit systemd, Python 3, git, ein eigener RANDOM.ORG-API-Ke
 
 ## Einschränkungen und Hinweise
 
-**Zeitpunkt der Generierung.** RANDOM.ORG konnte bisher nicht garantieren, dass die Zufallszahlen erst **zum Zeitpunkt des Abrufs generiert** werden. Es ist daher nicht ausgeschlossen, dass Zahlen bereits vorher erzeugt wurden. Der Zeitstempel (`CompletionTime`) in der signierten Antwort belegt den Zeitpunkt der Auslieferung, aber nicht zwingend den der Erzeugung. RANDOM.ORG wurde am 2. Oktober 2026 gebeten, die Zahlen künftig zum Zeitpunkt des Abrufs zu generieren.
+**Zeitpunkt der Generierung.** RANDOM.ORG konnte bisher nicht garantieren, dass die Zufallszahlen erst **zum Zeitpunkt des Abrufs generiert** werden. Es ist daher nicht ausgeschlossen, dass Zahlen bereits vorher erzeugt wurden. Der Zeitstempel (`CompletionTime`) in der signierten Antwort belegt den Zeitpunkt der Auslieferung, aber nicht zwingend den der Erzeugung. RANDOM.ORG wurde am 2. Oktober 2026 gebeten, die Zahlen künftig zum Zeitpunkt des Abrufs zu generieren. Zusätzlich wurde bei RANDOM.ORG für die Dokumentation angefragt, in welchem zeitlichen Fenster eines Abrufs die Zufallszahlen generiert werden. Sobald dazu eine Auskunft vorliegt, wird sie hier ergänzt.
 
 **Keine Stellungnahme von RANDOM.ORG.** Die Nutzung des Dienstes stellt keine öffentliche Stellungnahme dieser Institution dar. RANDOM.ORG macht sich die Methodik dieses Experiments weder zu eigen noch bestätigt oder unterstützt es sie. Die Veröffentlichung der unveränderten signierten Antworten erfolgt mit Erlaubnis von RANDOM.ORG (E-Mail vom 1. Oktober 2026).
 
